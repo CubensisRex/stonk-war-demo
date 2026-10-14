@@ -120,6 +120,14 @@ export function StonkWarDemo() {
     () => Math.tanh(pricing.gap * 4.5),
     [pricing.gap],
   );
+  const meterAudioVelocity = useMemo(() => {
+    if (phase !== "LIVE") return 0;
+    const previousFrame = getMarketFrame(round, Math.min(60, secondsRemaining + 0.45));
+    const previousPosition = Math.tanh(
+      (previousFrame.rightPerformance - previousFrame.leftPerformance) * 4.5,
+    );
+    return Math.max(-1, Math.min(1, (meterAudioPosition - previousPosition) * 7));
+  }, [meterAudioPosition, phase, round, secondsRemaining]);
   const leader: Side | "TIED" =
     Math.abs(pricing.gap) < 0.004
       ? "TIED"
@@ -273,8 +281,8 @@ export function StonkWarDemo() {
       audioManager.stopMeterSignal();
       return;
     }
-    audioManager.setMeterSignal(meterAudioPosition);
-  }, [meterAudioPosition, phase, soundEnabled]);
+    audioManager.setMeterSignal(meterAudioPosition, meterAudioVelocity);
+  }, [meterAudioPosition, meterAudioVelocity, phase, soundEnabled]);
 
   useEffect(() => {
     const previousPhase = previousPhaseRef.current;

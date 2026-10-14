@@ -255,14 +255,18 @@ class AudioManager {
    * so every small meter movement is reflected, rather than only centre-line
    * crossovers receiving audio feedback.
    */
-  setMeterSignal(position: number) {
+  setMeterSignal(position: number, velocity = 0) {
     if (!this.enabled || !this.unlocked) return;
 
     const context = this.getContext();
     const clampedPosition = Math.max(-1, Math.min(1, position));
-    const frequency = 520 * Math.pow(2, clampedPosition * 0.72);
-    const filterFrequency = 1_050 + (clampedPosition + 1) * 440;
-    const targetGain = 0.018 + Math.abs(clampedPosition) * 0.012;
+    const clampedVelocity = Math.max(-1, Math.min(1, velocity));
+    const positionFrequency = 520 * Math.pow(2, clampedPosition * 0.72);
+    // A small velocity bend gives the marker a physical, engine-like sense of
+    // momentum: it climbs ahead of a rightward move and eases down on a leftward one.
+    const frequency = positionFrequency * Math.pow(2, clampedVelocity * 0.17);
+    const filterFrequency = 1_050 + (clampedPosition + 1) * 440 + Math.abs(clampedVelocity) * 210;
+    const targetGain = 0.016 + Math.abs(clampedPosition) * 0.01 + Math.abs(clampedVelocity) * 0.01;
 
     if (!this.meterOscillator || !this.meterGain || !this.meterFilter) {
       const oscillator = context.createOscillator();
