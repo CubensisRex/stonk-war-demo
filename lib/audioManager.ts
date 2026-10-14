@@ -60,7 +60,7 @@ class AudioManager {
   private loopSources = new Map<LoopSoundId, AudioBufferSourceNode>();
   private loopGains = new Map<LoopSoundId, GainNode>();
   private loopRequests = new Map<LoopSoundId, number>();
-  private effectSource: AudioBufferSourceNode | null = null;
+  private effectSource: AudioScheduledSourceNode | null = null;
   private meterOscillator: OscillatorNode | null = null;
   private meterFilter: BiquadFilterNode | null = null;
   private meterGain: GainNode | null = null;
@@ -152,6 +152,39 @@ class AudioManager {
       };
       this.effectSource = source;
       source.start();
+    } catch {
+      // UI audio is enhancement-only and must never interrupt the game.
+    }
+  }
+
+  /** A low-key heartbeat for the round clock. The final ten seconds gently rise. */
+  playCountdownPulse(secondsRemaining: number) {
+    if (!this.enabled || !this.unlocked) return;
+    try {
+      const context = this.getContext();
+      const lastTenProgress = Math.max(0, Math.min(1, (10 - secondsRemaining) / 9));
+      const frequency = 340 + lastTenProgress * 320;
+      const now = context.currentTime;
+      const oscillator = context.createOscillator();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+
+      this.stopEffect();
+      oscillator.type = "sine";
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1_150 + lastTenProgress * 450, now);
+      filter.Q.value = 0.5;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.052 + lastTenProgress * 0.018, now + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+      oscillator.frequency.setValueAtTime(frequency, now);
+      oscillator.connect(filter).connect(gain).connect(context.destination);
+      oscillator.onended = () => {
+        if (this.effectSource === oscillator) this.effectSource = null;
+      };
+      this.effectSource = oscillator;
+      oscillator.start(now);
+      oscillator.stop(now + 0.27);
     } catch {
       // UI audio is enhancement-only and must never interrupt the game.
     }

@@ -305,10 +305,8 @@ export function StonkWarDemo() {
     lastCountdownSoundRef.current = wholeSecond;
     if (!soundEnabled) return;
 
-    if (wholeSecond === 5 || wholeSecond === 4) {
-      void audioManager.play("final-seconds");
-    } else if (wholeSecond >= 1 && wholeSecond <= 3) {
-      void audioManager.play("countdown-tick");
+    if (wholeSecond >= 1 && wholeSecond <= 59) {
+      audioManager.playCountdownPulse(wholeSecond);
     }
   }, [phase, secondsRemaining, soundEnabled]);
 
