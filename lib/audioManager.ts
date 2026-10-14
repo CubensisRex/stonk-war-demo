@@ -20,7 +20,7 @@ export type SoundId = keyof typeof SOUND_URLS;
 const SOUND_GAINS: Record<SoundId, number> = {
   // The generated music bed is deliberately conservative. This gain keeps it
   // beneath UI feedback while still making it audible on laptop speakers.
-  "stonk-war-ambient-loop": 0.14,
+  "stonk-war-ambient-loop": 0.18,
   "zeroing-loop": 0.28,
   "countdown-tick": 0.42,
   "round-start": 0.48,

@@ -481,7 +481,11 @@ export function StonkWarDemo() {
   };
 
   const startFirstRound = () => {
-    void audioManager.unlock();
+    if (soundEnabled) {
+      void audioManager.unlock().then(() => audioManager.startLoop("stonk-war-ambient-loop"));
+    } else {
+      void audioManager.unlock();
+    }
     zeroingStartTimeRef.current = performance.now();
     setShowHowToPlay(false);
   };

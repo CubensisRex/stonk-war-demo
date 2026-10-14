@@ -154,16 +154,23 @@ function ambientLoop() {
       Math.sin(TAU * 110 * time + 0.4) * 0.014
       + Math.sin(TAU * 165 * time + 1.7) * 0.006
     ) * softPulse;
+    // Keep a quiet, speaker-friendly layer above the sub bass so the music
+    // remains present on laptops without turning into a melody.
+    const midBed = (
+      Math.sin(TAU * 220 * time + 1.1) * 0.016
+      + waveform(TAU * 275 * time + 2.6, "triangle") * 0.009
+      + Math.sin(TAU * 330 * time + 0.35) * 0.004
+    ) * (0.6 + softPulse * 0.4);
     const digitalTexture = (
-      Math.sin(TAU * 440 * time + 0.9) * 0.0032
-      + Math.sin(TAU * 660 * time + 2.4) * 0.0018
-      + Math.sin(TAU * 880 * time + 1.65) * 0.001
+      Math.sin(TAU * 440 * time + 0.9) * 0.007
+      + Math.sin(TAU * 660 * time + 2.4) * 0.0038
+      + Math.sin(TAU * 880 * time + 1.65) * 0.0021
     ) * dataGate;
 
-    samples[index] = lowBed + pulse + digitalTexture;
+    samples[index] = lowBed + pulse + midBed + digitalTexture;
   }
 
-  return normalize(samples, 0.3, false);
+  return normalize(samples, 0.32, false);
 }
 
 function countdownTick() {
