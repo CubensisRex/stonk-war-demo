@@ -269,14 +269,6 @@ export function StonkWarDemo() {
   }, [soundEnabled]);
 
   useEffect(() => {
-    if (phase === "ZEROING" && roundReady && !showHowToPlay && soundEnabled) {
-      void audioManager.startLoop("zeroing-loop");
-      return () => audioManager.stopLoop("zeroing-loop");
-    }
-    audioManager.stopLoop("zeroing-loop", 80);
-  }, [phase, roundReady, showHowToPlay, soundEnabled]);
-
-  useEffect(() => {
     if (phase !== "LIVE" || !soundEnabled) {
       audioManager.stopMeterSignal();
       return;
@@ -288,9 +280,6 @@ export function StonkWarDemo() {
     const previousPhase = previousPhaseRef.current;
     if (previousPhase === phase) return;
 
-    if (soundEnabled && previousPhase === "ZEROING" && phase === "LIVE") {
-      void audioManager.play("round-start");
-    }
     if (soundEnabled && previousPhase === "LIVE" && phase === "SETTLING") {
       void audioManager.play("round-freeze");
     }
@@ -303,20 +292,20 @@ export function StonkWarDemo() {
   }, [phase, playerResult, soundEnabled]);
 
   useEffect(() => {
-    if (phase !== "LIVE") {
+    if (phase !== "ZEROING") {
       lastCountdownSoundRef.current = -1;
       return;
     }
 
-    const wholeSecond = Math.ceil(secondsRemaining);
+    const wholeSecond = Math.ceil(zeroingSecondsRemaining);
     if (wholeSecond === lastCountdownSoundRef.current) return;
     lastCountdownSoundRef.current = wholeSecond;
     if (!soundEnabled) return;
 
-    if (wholeSecond >= 1 && wholeSecond <= 59) {
+    if (wholeSecond >= 1 && wholeSecond <= 29) {
       audioManager.playCountdownPulse(wholeSecond);
     }
-  }, [phase, secondsRemaining, soundEnabled]);
+  }, [phase, soundEnabled, zeroingSecondsRemaining]);
 
   useEffect(() => {
     if (leader === "TIED") return;
