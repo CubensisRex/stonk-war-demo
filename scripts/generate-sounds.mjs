@@ -189,6 +189,31 @@ function betPlaced() {
   return normalize(samples, 0.27);
 }
 
+function markerSignal({ direction }) {
+  const samples = buffer(0.14);
+  const rises = direction === "right";
+  addNoise(samples, { seed: rises ? 37 : 43, duration: 0.014, amplitude: 0.05, release: 0.01, decay: 9 });
+  addTone(samples, {
+    duration: 0.125,
+    frequency: rises ? 560 : 900,
+    endFrequency: rises ? 900 : 560,
+    amplitude: 0.1,
+    release: 0.075,
+    decay: 1.9,
+    type: "triangle",
+  });
+  addTone(samples, {
+    start: 0.028,
+    duration: 0.09,
+    frequency: rises ? 840 : 650,
+    endFrequency: rises ? 1_020 : 500,
+    amplitude: 0.035,
+    release: 0.055,
+    decay: 2.2,
+  });
+  return normalize(samples, 0.2);
+}
+
 function leadChange() {
   const samples = buffer(0.105);
   addNoise(samples, { seed: 37, duration: 0.018, amplitude: 0.08, release: 0.012, decay: 9 });
@@ -279,6 +304,8 @@ const sounds = {
   "round-start.wav": roundStart(),
   "bet-placed.wav": betPlaced(),
   "lead-change.wav": leadChange(),
+  "marker-left.wav": markerSignal({ direction: "left" }),
+  "marker-right.wav": markerSignal({ direction: "right" }),
   "final-seconds.wav": finalSeconds(),
   "round-freeze.wav": roundFreeze(),
   "win.wav": win(),

@@ -304,13 +304,15 @@ export function StonkWarDemo() {
     if (leader === "TIED") return;
     if (previousLeaderRef.current !== leader && previousLeaderRef.current !== "TIED") {
       setLeaderFlipPulse(true);
-      if (phase === "LIVE" && soundEnabled) void audioManager.play("lead-change");
+      if (phase === "LIVE" && soundEnabled) {
+        void audioManager.play(leader === round.rightTicker ? "marker-right" : "marker-left");
+      }
       const timeout = window.setTimeout(() => setLeaderFlipPulse(false), 620);
       previousLeaderRef.current = leader;
       return () => window.clearTimeout(timeout);
     }
     previousLeaderRef.current = leader;
-  }, [leader, phase, soundEnabled]);
+  }, [leader, phase, round.rightTicker, soundEnabled]);
 
   useEffect(() => {
     if (!hasHoldings) return;

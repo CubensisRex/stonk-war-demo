@@ -10,6 +10,8 @@ const EXPECTED_DURATIONS: Record<keyof typeof SOUND_URLS, [number, number]> = {
   "round-start": [0.25, 0.65],
   "bet-placed": [0.1, 0.2],
   "lead-change": [0.05, 0.2],
+  "marker-left": [0.08, 0.2],
+  "marker-right": [0.08, 0.2],
   "final-seconds": [0.1, 0.3],
   "round-freeze": [0.25, 0.6],
   win: [1, 1.5],
@@ -20,7 +22,7 @@ const EXPECTED_DURATIONS: Record<keyof typeof SOUND_URLS, [number, number]> = {
 
 describe("Stonk War sound pack", () => {
   it("ships every requested sound as conservative mono 48kHz WAV audio", () => {
-    expect(Object.keys(SOUND_URLS)).toHaveLength(12);
+    expect(Object.keys(SOUND_URLS)).toHaveLength(14);
 
     for (const [sound, url] of Object.entries(SOUND_URLS)) {
       const wav = readFileSync(join(process.cwd(), "public", url.replace(/^\//, "")));
