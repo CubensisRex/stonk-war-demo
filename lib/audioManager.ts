@@ -18,7 +18,9 @@ export const SOUND_URLS = {
 export type SoundId = keyof typeof SOUND_URLS;
 
 const SOUND_GAINS: Record<SoundId, number> = {
-  "stonk-war-ambient-loop": 0.1,
+  // The generated music bed is deliberately conservative. This gain keeps it
+  // beneath UI feedback while still making it audible on laptop speakers.
+  "stonk-war-ambient-loop": 0.14,
   "zeroing-loop": 0.28,
   "countdown-tick": 0.42,
   "round-start": 0.48,
@@ -59,6 +61,9 @@ class AudioManager {
   private loopGains = new Map<LoopSoundId, GainNode>();
   private loopRequests = new Map<LoopSoundId, number>();
   private effectSource: AudioBufferSourceNode | null = null;
+  private meterOscillator: OscillatorNode | null = null;
+  private meterFilter: BiquadFilterNode | null = null;
+  private meterGain: GainNode | null = null;
 
   getEnabledPreference() {
     if (typeof window === "undefined") return true;
@@ -208,6 +213,82 @@ class AudioManager {
       this.stopLoop(sound, 80);
     }
     this.stopEffect();
+    this.stopMeterSignal(80);
+  }
+
+  /**
+   * A quiet continuous telemetry tone for the live battle meter. Moving right
+   * raises the pitch; moving left lowers it. This is synthesised in real time
+   * so every small meter movement is reflected, rather than only centre-line
+   * crossovers receiving audio feedback.
+   */
+  setMeterSignal(position: number) {
+    if (!this.enabled || !this.unlocked) return;
+
+    const context = this.getContext();
+    const clampedPosition = Math.max(-1, Math.min(1, position));
+    const frequency = 520 * Math.pow(2, clampedPosition * 0.72);
+    const filterFrequency = 1_050 + (clampedPosition + 1) * 440;
+    const targetGain = 0.018 + Math.abs(clampedPosition) * 0.012;
+
+    if (!this.meterOscillator || !this.meterGain || !this.meterFilter) {
+      const oscillator = context.createOscillator();
+      const filter = context.createBiquadFilter();
+      const gain = context.createGain();
+      oscillator.type = "triangle";
+      filter.type = "lowpass";
+      filter.Q.value = 1.2;
+      gain.gain.setValueAtTime(0, context.currentTime);
+      oscillator.connect(filter).connect(gain).connect(context.destination);
+      oscillator.start();
+      this.meterOscillator = oscillator;
+      this.meterFilter = filter;
+      this.meterGain = gain;
+      oscillator.onended = () => {
+        if (this.meterOscillator === oscillator) {
+          this.meterOscillator = null;
+          this.meterFilter = null;
+          this.meterGain = null;
+        }
+      };
+    }
+
+    const now = context.currentTime;
+    this.meterOscillator.frequency.setTargetAtTime(frequency, now, 0.11);
+    this.meterFilter.frequency.setTargetAtTime(filterFrequency, now, 0.14);
+    this.meterGain.gain.cancelScheduledValues(now);
+    this.meterGain.gain.setTargetAtTime(targetGain, now, 0.08);
+  }
+
+  stopMeterSignal(fadeMilliseconds = 180) {
+    const oscillator = this.meterOscillator;
+    const gain = this.meterGain;
+    this.meterOscillator = null;
+    this.meterFilter = null;
+    this.meterGain = null;
+    if (!oscillator) return;
+
+    const context = this.context;
+    if (!context || !gain || fadeMilliseconds <= 0) {
+      try {
+        oscillator.stop();
+      } catch {
+        // It may already have ended.
+      }
+      return;
+    }
+
+    const now = context.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + fadeMilliseconds / 1_000);
+    window.setTimeout(() => {
+      try {
+        oscillator.stop();
+      } catch {
+        // It may already have ended.
+      }
+    }, fadeMilliseconds + 30);
   }
 
   private getContext() {

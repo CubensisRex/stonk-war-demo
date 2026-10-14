@@ -163,7 +163,7 @@ function ambientLoop() {
     samples[index] = lowBed + pulse + digitalTexture;
   }
 
-  return normalize(samples, 0.2, false);
+  return normalize(samples, 0.3, false);
 }
 
 function countdownTick() {

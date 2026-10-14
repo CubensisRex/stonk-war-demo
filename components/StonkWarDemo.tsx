@@ -116,6 +116,10 @@ export function StonkWarDemo() {
     if (Math.abs(movement) < 0.0006) return "neutral" as const;
     return movement > 0 ? "right" as const : "left" as const;
   }, [phase, pricing.gap, round, secondsRemaining]);
+  const meterAudioPosition = useMemo(
+    () => Math.tanh(pricing.gap * 4.5),
+    [pricing.gap],
+  );
   const leader: Side | "TIED" =
     Math.abs(pricing.gap) < 0.004
       ? "TIED"
@@ -265,6 +269,14 @@ export function StonkWarDemo() {
   }, [phase, roundReady, showHowToPlay, soundEnabled]);
 
   useEffect(() => {
+    if (phase !== "LIVE" || !soundEnabled) {
+      audioManager.stopMeterSignal();
+      return;
+    }
+    audioManager.setMeterSignal(meterAudioPosition);
+  }, [meterAudioPosition, phase, soundEnabled]);
+
+  useEffect(() => {
     const previousPhase = previousPhaseRef.current;
     if (previousPhase === phase) return;
 
@@ -305,14 +317,14 @@ export function StonkWarDemo() {
     if (previousLeaderRef.current !== leader && previousLeaderRef.current !== "TIED") {
       setLeaderFlipPulse(true);
       if (phase === "LIVE" && soundEnabled) {
-        void audioManager.play(leader === round.rightTicker ? "marker-right" : "marker-left");
+        void audioManager.play("lead-change");
       }
       const timeout = window.setTimeout(() => setLeaderFlipPulse(false), 620);
       previousLeaderRef.current = leader;
       return () => window.clearTimeout(timeout);
     }
     previousLeaderRef.current = leader;
-  }, [leader, phase, round.rightTicker, soundEnabled]);
+  }, [leader, phase, soundEnabled]);
 
   useEffect(() => {
     if (!hasHoldings) return;
